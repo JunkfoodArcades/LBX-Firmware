@@ -237,9 +237,7 @@ void loop() {
         lockUpDown=false; intUpDown = 0; prevIntUpDown = 0; axisY=128;
       }
       
-      if ((boolCLeft) || (boolCRight) || (boolCUp) || (boolCDown)){
-        scrubCStickSOCD();
-        }
+      if ((boolCLeft) || (boolCRight) || (boolCUp) || (boolCDown)){scrubCStickSOCD();}
       else{
         bitClear(longBtnPress,7);
         bitClear(longBtnPress,8);

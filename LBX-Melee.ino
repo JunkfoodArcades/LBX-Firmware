@@ -1,4 +1,13 @@
 // This code uses Nicohood's Nintendo library
+// This code is original but based off of the concepts in Simple's DIY repository (from Jan 6 2017) as well as Crane's GCCPCB repository. Special thanks to both of those peeps!
+// https://github.com/SimpleControllers/SimpleControllersBuild-a-Box
+// https://github.com/Crane1195/GCCPCB/tree/master/code/GCCPCB2-v1.209 (outdated, he has a new repo called CL-FW)
+// Values in the code were observed by flashing Crane's GCCPCB2 code to an arduino PCB and observing the values in "Visual Controller Test".
+
+// This code is open source and instuctions for routine flashing, remapping and using it's features (switching to a Brook board) as well as a pinout for our LBX will be posted online.
+// Modifications to adapt this code for other game types and protocols will be posted in separate files.
+// Code that combines all game types and protocols has not been written.
+// A license in line with other projects in this space will be provided.
 
 #include "Nintendo.h"
 
@@ -140,26 +149,26 @@ void loop() {
     boolStart   = !((PINF & (1 << 0)) >> 0); // PINF0 Start
 
     longBtnPress = 0;
-    if (boolLeft) {bitSet(longBtnPress, 0);}
-    if (boolDown) {bitSet(longBtnPress, 1);}
-    if (boolRight) {bitSet(longBtnPress, 2);}
-    if (boolL)    {bitSet(longBtnPress, 3);}
-    if (boolModX) {bitSet(longBtnPress, 4);}
+    if (boolLeft)   {bitSet(longBtnPress, 0);}
+    if (boolDown)   {bitSet(longBtnPress, 1);}
+    if (boolRight)  {bitSet(longBtnPress, 2);}
+    if (boolL)      {bitSet(longBtnPress, 3);}
+    if (boolModX)   {bitSet(longBtnPress, 4);}
     if (boolJFAKey) {bitSet(longBtnPress, 5);}
-    if (boolModY) {bitSet(longBtnPress, 6);}
+    if (boolModY)   {bitSet(longBtnPress, 6);}
     if (boolCDown)  {bitSet(longBtnPress, 7);}
     if (boolCLeft)  {bitSet(longBtnPress, 8);}
-    if (boolA)    {bitSet(longBtnPress, 9);}
+    if (boolA)      {bitSet(longBtnPress, 9);}
     if (boolCRight) {bitSet(longBtnPress, 10);}
-    if (boolCUp)  {bitSet(longBtnPress, 11);}
-    if (boolGCUp) {bitSet(longBtnPress, 12);}
-    if (boolZ)    {bitSet(longBtnPress, 13);}
-    if (boolX)    {bitSet(longBtnPress, 14);}
-    if (boolB)    {bitSet(longBtnPress, 15);}
-    if (boolR)    {bitSet(longBtnPress, 16);}
-    if (boolY)    {bitSet(longBtnPress, 17);}
-    if (boolLS)   {bitSet(longBtnPress, 18);}
-    if (boolMS)   {bitSet(longBtnPress, 19);}
+    if (boolCUp)    {bitSet(longBtnPress, 11);}
+    if (boolGCUp)   {bitSet(longBtnPress, 12);}
+    if (boolZ)      {bitSet(longBtnPress, 13);}
+    if (boolX)      {bitSet(longBtnPress, 14);}
+    if (boolB)      {bitSet(longBtnPress, 15);}
+    if (boolR)      {bitSet(longBtnPress, 16);}
+    if (boolY)      {bitSet(longBtnPress, 17);}
+    if (boolLS)     {bitSet(longBtnPress, 18);}
+    if (boolMS)     {bitSet(longBtnPress, 19);}
     if (boolStart)  {bitSet(longBtnPress, 20);}
     
     //If brook mode = yes then skip everything and call brook function

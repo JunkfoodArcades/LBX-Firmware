@@ -68,21 +68,18 @@ Gamecube_Data_t d = defaultGamecubeData;
   bool boolDPadRight =false;
 
 // Define ModX and ModY impact on single cardinal directions in 2 arrays. (see spreadsheet tabs 1 & 2)
-int modXArr[4] = {151,105,75,181}; // Mod X
-int modYArr[4] = {187,69,101,155}; // Mod Y
+int modXArr[4] = {188,68,58,198}; // Mod X
+int modYArr[4] = {162,94,100,156}; // Mod Y
 
 // Define angle values in 4 arrays. (see spreadsheet tabs 1 & 2)
-int angleArr1[23] = {105,69,104,71,97,71,93,65,85,71,73,98,60,85,98,60,73,85,73,73,85,73,69};                       // Down
-int angleArr2[23] = {69,105,79,100,76,94,79,83,77,81,85,77,88,85,77,88,28,85,105,28,85,105,105};                    // Left
-int angleArr3[23] = {151,187,152,185,159,185,163,191,171,185,171,158,196,171,158,196,228,171,187,228,171,187,187};  // UP
-int angleArr4[23] = {187,151,177,156,180,162,177,173,179,175,171,179,168,171,179,168,228,171,151,228,171,151,151};  // Right
+int angleArr1[16] = {94,70,96,46,78,44,73,51,67,56,195,195,195,176,168,196};            // Down
+int angleArr2[16] = {58,100,46,96,44,78,51,73,56,66,195,195,195,176,196,168};           // Left
+int angleArr3[16] = {162,186,160,210,178,212,183,205,189,200,195,195,195,176,168,196};  // UP
+int angleArr4[16] = {198,156,210,160,212,178,205,183,200,190,195,195,195,176,168,196};  // Right
 
 // Define special values in 5 arrays. (see spreadsheet tabs 1 & 2)
-int specialArr1[4] = {228,28,28,228};   // L, ModX+L, ModY+L, LS, MS
-int specialArr2[4] = {171,85,77,179};   // R, ModX+R, ModY+R, ModX+LS, ModX+MS
-int specialArr3[4] = {187,69,101,155};  // ModY+LS, ModY+MS
-int specialArr4[4] = {187,69,48,208};   // ModY+B
-int specialArr5[4] = {73,71,73,185};    // L, LS, ModY+LS, MS, ModY+MS all have diff vals for down angles
+int specialArr1[4] = {228,28,28,228};   // L, ModX+L, ModY+L
+int specialArr2[4] = {171,85,77,179};   // R, ModX+R, ModY+R
 int specialArr6[2] = {228,28};          // Cstick array
 
 void setup() {
@@ -400,13 +397,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisX=specialArr1[2];intL=140;}                // Left and L
         else if((intMods==1) && (boolL)){axisX=specialArr1[2];intL=140;}                // Left and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisX=specialArr1[2];intL=140;}   // Left and ModY+L
-        else if((intMods==0) && (boolLS)){axisX=specialArr1[2];intR=80;}                // Left and LS
-        else if((intMods==1) && (boolLS)){axisX=specialArr2[2];intR=80;}                // Left and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisX=specialArr3[2];intR=80;}   // Left and ModY+LS
-        else if((intMods==0) && (boolMS)){axisX=specialArr1[2];intR=125;}               // Left and MS
-        else if((intMods==1) && (boolMS)){axisX=specialArr2[2];intR=125;}               // Left and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisX=specialArr3[2];intR=125;}  // Left and ModY+MS
-        else if((intMods==2) && (boolB)){axisX=specialArr4[2];}                         // Left and ModY+B
         break;
 
       // Right
@@ -423,13 +413,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisX=specialArr1[3];intL=140;}                // Right and L
         else if((intMods==1) && (boolL)){axisX=specialArr1[3];intL=140;}                // Right and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisX=specialArr1[3];intL=140;}   // Right and ModY+L
-        else if((intMods==0) && (boolLS)){axisX=specialArr1[3];intR=80;}                // Right and LS
-        else if((intMods==1) && (boolLS)){axisX=specialArr2[3];intR=80;}                // Right and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisX=specialArr3[3];intR=80;}   // Right and ModY+LS
-        else if((intMods==0) && (boolMS)){axisX=specialArr1[3];intR=125;}               // Right and MS
-        else if((intMods==1) && (boolMS)){axisX=specialArr2[3];intR=125;}               // Right and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisX=specialArr3[3];intR=125;}  // Right and ModY+MS
-        else if((intMods==2) && (boolB)){axisX=specialArr4[3];}                         // Right and ModY+B 
         break;
 
       // Down
@@ -446,12 +429,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=specialArr1[1];intL=140;}                // Down and L
         else if((intMods==1) && (boolL)){axisY=specialArr1[1];intL=140;}                // Down and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=specialArr1[1];intL=140;}   // Down and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr1[1];intR=80;}                // Down and LS
-        else if((intMods==1) && (boolLS)){axisY=specialArr2[1];intR=80;}                // Down and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr3[1];intR=80;}   // Down and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr1[1];intR=125;}               // Down and MS
-        else if((intMods==1) && (boolMS)){axisY=specialArr2[1];intR=125;}               // Down and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr3[1];intR=125;}  // Down and ModY+MS
         break;      
 
       // Down & Left
@@ -475,12 +452,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[1];intL=140;}                       // *Down Left and L
         else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr2[11];intL=140;}                         // Down Left and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr2[12];intL=140;}            // Down Left and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=80;}                       // *Down Left and LS
-        else if((intMods==1) && (boolLS)){axisY=angleArr1[17];axisX=angleArr2[17];intR=80;}                         // Down Left and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=80;}          // *Down Left and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=125;}                      // *Down Left and MS
-        else if((intMods==1) && (boolMS)){axisY=angleArr1[20];axisX=angleArr2[20];intR=125;}                        // Down Left and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=125;}         // *Down Left and ModY+MS
         break;
 
       // Down & Right
@@ -504,12 +475,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[3];intL=140;}                       // *Down Right and L
         else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr4[11];intL=140;}                         // Down Right and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr4[12];intL=140;}            // Down Right and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=80;}                       // *Down Right and LS
-        else if((intMods==1) && (boolLS)){axisY=angleArr1[17];axisX=angleArr4[17];intR=80;}                         // Down Right and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=80;}          // *Down Right and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=125;}                      // *Down Right and MS
-        else if((intMods==1) && (boolMS)){axisY=angleArr1[20];axisX=angleArr4[20];intR=125;}                        // Down Right and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=125;}         // *Down Right and ModY+MS
         break;    
 
       // Up
@@ -526,12 +491,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=specialArr1[0];intL=140;}                // Up and L
         else if((intMods==1) && (boolL)){axisY=specialArr1[0];intL=140;}                // Up and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=specialArr1[0];intL=140;}   // Up and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr1[0];intR=80;}                // Up and LS
-        else if((intMods==1) && (boolLS)){axisY=specialArr2[0];intR=80;}                // Up and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr3[0];intR=80;}   // Up and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr1[0];intR=125;}               // Up and MS
-        else if((intMods==1) && (boolMS)){axisY=specialArr2[0];intR=125;}               // Up and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr3[0];intR=125;}  // Up and ModY+MS
         break;
 
       // Up & Left
@@ -555,12 +514,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr2[10];intL=140;}                         // Up Left and L
         else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr2[11];intL=140;}                         // Up Left and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr2[12];intL=140;}            // Up Left and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=angleArr3[16];axisX=angleArr2[16];intR=80;}                         // Up Left and LS
-        else if((intMods==1) && (boolLS)){axisY=angleArr3[17];axisX=angleArr2[17];intR=80;}                         // Up Left and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr3[18];axisX=angleArr2[18];intR=80;}            // Up Left and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=angleArr3[19];axisX=angleArr2[19];intR=125;}                        // Up Left and MS
-        else if((intMods==1) && (boolMS)){axisY=angleArr3[20];axisX=angleArr2[20];intR=125;}                        // Up Left and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr3[21];axisX=angleArr2[21];intR=125;}           // Up Left and ModY+MS
         break;
 
       // Up & Right
@@ -584,12 +537,6 @@ void scrubAngles() {
         else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr4[10];intL=140;}                         // Up Right and L
         else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr4[11];intL=140;}                         // Up Right and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr4[12];intL=140;}            // Up Right and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=angleArr3[16];axisX=angleArr4[16];intR=80;}                         // Up Right and LS
-        else if((intMods==1) && (boolLS)){axisY=angleArr3[17];axisX=angleArr4[17];intR=80;}                         // Up Right and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr3[18];axisX=angleArr4[18];intR=80;}            // Up Right and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=angleArr3[19];axisX=angleArr4[19];intR=125;}                        // Up Right and MS
-        else if((intMods==1) && (boolMS)){axisY=angleArr3[20];axisX=angleArr4[20];intR=125;}                        // Up Right and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr3[21];axisX=angleArr4[21];intR=125;}           // Up Right and ModY+MS
         break;
   }
 }

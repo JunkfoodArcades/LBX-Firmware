@@ -1,4 +1,6 @@
 # LBX-Melee
+Super busy in the shop - will clean this up a bit when there is more free time.</p>
+
 This code uses Nicohood's Nintendo library</br>
 This code is original but based off of the concepts in Simple's DIY repository (from Jan 6 2017) as well as Crane's GCCPCB repository. Special thanks to both of those peeps! I am unaware of any direct lines of code that matches either of the above repositories, but generally willing to make changes here to ensure we are not copying someone else's work unintentionally. Please also take a moment to visit the main sources referenced above:</br>
 https://github.com/SimpleControllers/SimpleControllersBuild-a-Box</br>

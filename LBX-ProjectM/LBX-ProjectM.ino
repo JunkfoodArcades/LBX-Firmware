@@ -67,17 +67,17 @@ Gamecube_Data_t d = defaultGamecubeData;
   bool boolDPadLeft =false;
   bool boolDPadRight =false;
 
-// Define ModX and ModY impact on single cardinal directions in 2 arrays. (see spreadsheet tabs 1 & 2)
+// Define ModX and ModY impact on single cardinal directions in 2 arrays. (see spreadsheet tabs 5 & 6)
 int modXArr[4] = {188,68,58,198}; // Mod X
 int modYArr[4] = {162,94,100,156}; // Mod Y
 
-// Define angle values in 4 arrays. (see spreadsheet tabs 1 & 2)
+// Define angle values in 4 arrays. (see spreadsheet tabs 5 & 6)
 int angleArr1[16] = {94,70,96,46,78,44,73,51,67,56,195,195,195,176,168,196};            // Down
 int angleArr2[16] = {58,100,46,96,44,78,51,73,56,66,195,195,195,176,196,168};           // Left
 int angleArr3[16] = {162,186,160,210,178,212,183,205,189,200,195,195,195,176,168,196};  // UP
 int angleArr4[16] = {198,156,210,160,212,178,205,183,200,190,195,195,195,176,168,196};  // Right
 
-// Define special values in 5 arrays. (see spreadsheet tabs 1 & 2)
+// Define special values in 5 arrays. (see spreadsheet tabs 5 & 6)
 int specialArr1[4] = {228,28,28,228};   // L, ModX+L, ModY+L
 int specialArr2[4] = {171,85,77,179};   // R, ModX+R, ModY+R
 int specialArr6[2] = {228,28};          // Cstick array

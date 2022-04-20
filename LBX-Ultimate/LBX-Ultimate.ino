@@ -9,7 +9,7 @@
 // This code is open source and instuctions for routine flashing, remapping and using it's features (switching to a Brook board) as well as a pinout for our LBX will be posted online.
 // Modifications to adapt this code for other game types and protocols will be posted in separate files.
 // Code that combines all game types and protocols has not been written.
-// A license in line with other projects in this space will be provided.
+// An open source license in line with other projects in this space is provided.
 
 //To do:
 // /Done/ Get rid of LS, MS

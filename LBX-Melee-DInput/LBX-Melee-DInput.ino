@@ -1,4 +1,4 @@
-// This code uses Nicohood's Nintendo library
+// This code uses Matthew Heironimus' Arduino Joystick Library https://github.com/MHeironimus/ArduinoJoystickLibrary
 // This code is original but based off of the concepts in Simple's DIY repository (from Jan 6 2017) as well as Crane's GCCPCB repository. Special thanks to both of those peeps!
 // https://github.com/SimpleControllers/SimpleControllersBuild-a-Box
 // https://github.com/Crane1195/GCCPCB/tree/master/code/GCCPCB2-v1.209 (outdated, he has a new repo called CL-FW)
@@ -12,11 +12,19 @@
 //****************THIS IS IN PROGRESS AND NOT FINISHED*********************
 
 //To do:
-// Add joystick library
-// Change the way things are sent / remove GCC sending (this library has an automode, but send manually instead)
-// test range of Left and Right. Base it on 0-255.
+// /DONE/ Add joystick library
+// /TEST/ Fix DPad logic
+// /TEST/ Change the way things are sent / remove GCC sending (this library has an automode, but send manually instead)
+// /TEST/ test range of Left and Right. Base it on 0-255.
 
+#include <Joystick.h>
 
+Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,
+  17, 0,                 // Button Count, Hat Switch Count
+  true, true, false,     // X and Y, but no Z Axis
+  false, false, false,   // No Rx, Ry, or Rz
+  false, false,          // No rudder or throttle
+  false, false, false);  // No accelerator, brake, or steering
 
 // Define ints for holding bit vals
   unsigned long longBtnPress = 0; 
@@ -122,6 +130,15 @@ void setup() {
     digitalWrite(A4, HIGH); // Brook board enabled
     pinMode(17, OUTPUT);    //Send UP to Brook with pin 17
   }
+  
+  // Initialize Joystick Library
+  Joystick.begin();
+    Joystick.setXAxisRange(0, 255);
+    Joystick.setYAxisRange(0, 255);
+    Joystick.setZAxisRange(0, 255);
+    Joystick.setRxAxisRange(0, 255);
+    Joystick.setRyAxisRange(0, 255);
+    Joystick.setThrottleRange(0, 255);
 }
 
 void loop() {
@@ -262,21 +279,41 @@ void loop() {
     }
   }
  
-  d.report.a = boolA;
-  d.report.b = boolB;
-  d.report.x = boolX;
-  d.report.y = boolY;
-  d.report.z = boolZ;
-  d.report.start = boolStart;
-  d.report.r = boolR;
-  d.report.l = boolL;
-  d.report.xAxis  = axisX;
-  d.report.yAxis  = axisY;
-  d.report.cxAxis   = cstickX;
-  d.report.cyAxis   = cstickY;
-  d.report.right = intR;
-  d.report.left = intL;
-  GamecubeConsole.write(d);
+//  d.report.a = boolA;
+//  d.report.b = boolB;
+//  d.report.x = boolX;
+//  d.report.y = boolY;
+//  d.report.z = boolZ;
+//  d.report.start = boolStart;
+//  d.report.r = boolR;
+//  d.report.l = boolL;
+//  d.report.xAxis  = axisX;
+//  d.report.yAxis  = axisY;
+//  d.report.cxAxis   = cstickX;
+//  d.report.cyAxis   = cstickY;
+//  d.report.right = intR;
+//  d.report.left = intL;
+//  GamecubeConsole.write(d);
+
+      Joystick.setButton(0, boolA);
+      Joystick.setButton(1, boolB);
+      Joystick.setButton(2, boolX);
+      Joystick.setButton(3, boolY);
+      Joystick.setButton(4, boolZ);
+      Joystick.setButton(5, boolL);
+      Joystick.setButton(6, boolR);
+      Joystick.setButton(7, boolSTART);
+      Joystick.setButton(8, boolDPadLeft);
+      Joystick.setButton(9, boolDPadUp);
+      Joystick.setButton(10, boolDPadRight);
+      Joystick.setButton(11, boolDPadDown);
+      Joystick.setButton(12, boolLS);
+      Joystick.setButton(13, boolMS);
+      Joystick.setXAxis(axisX);
+      Joystick.setYAxis(axisY);
+      Joystick.setRxAxis(cstickX);
+      Joystick.setRyAxis(cstickY);
+      Joystick.setThrottle(intR);
   }
 }
 
@@ -355,10 +392,10 @@ void scrubDpad() {
     boolDPadLeft  = bitRead(intCLeftRight,0);
     boolDPadRight = bitRead(intCLeftRight,1);
     //Set GCC values
-    d.report.dup    = boolDPadUp;
-    d.report.ddown  = boolDPadDown;
-    d.report.dleft  = boolDPadLeft;
-    d.report.dright = boolDPadRight;
+//    d.report.dup    = boolDPadUp;
+//    d.report.ddown  = boolDPadDown;
+//    d.report.dleft  = boolDPadLeft;
+//    d.report.dright = boolDPadRight;
     //zero out Cstick vars and GCC values
     intCUpDown = 0;
     prevIntCUpDown = 0;

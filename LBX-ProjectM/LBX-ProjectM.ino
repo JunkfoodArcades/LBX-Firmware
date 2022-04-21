@@ -1,4 +1,4 @@
-// This code uses Nicohood's Nintendo library
+// This code uses Nicohood's Nintendo library  https://github.com/NicoHood/Nintendo
 // This code is original but based off of the concepts in Simple's DIY repository (from Jan 6 2017) as well as Crane's GCCPCB repository. Special thanks to both of those peeps!
 // https://github.com/SimpleControllers/SimpleControllersBuild-a-Box
 // https://github.com/Crane1195/GCCPCB/tree/master/code/GCCPCB2-v1.209 (outdated, he has a new repo called CL-FW)

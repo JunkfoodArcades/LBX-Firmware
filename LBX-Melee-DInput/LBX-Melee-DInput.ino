@@ -269,12 +269,12 @@ void loop() {
         }
         
       if (boolJFAKey){scrubDpad();}
-      else{
-        d.report.dup    = 0;
-        d.report.ddown  = 0;
-        d.report.dleft  = 0;
-        d.report.dright = 0;
-        }
+//      else{
+//        d.report.dup    = 0;
+//        d.report.ddown  = 0;
+//        d.report.dleft  = 0;
+//        d.report.dright = 0;
+//        }
       scrubAngles();
     }
   }
@@ -302,7 +302,7 @@ void loop() {
       Joystick.setButton(4, boolZ);
       Joystick.setButton(5, boolL);
       Joystick.setButton(6, boolR);
-      Joystick.setButton(7, boolSTART);
+      Joystick.setButton(7, boolStart);
       Joystick.setButton(8, boolDPadLeft);
       Joystick.setButton(9, boolDPadUp);
       Joystick.setButton(10, boolDPadRight);

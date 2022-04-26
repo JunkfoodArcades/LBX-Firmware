@@ -22,8 +22,8 @@
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,
   17, 0,                 // Button Count, Hat Switch Count
   true, true, false,     // X and Y, but no Z Axis
-  false, false, false,   // No Rx, Ry, or Rz
-  false, false,          // No rudder or throttle
+  true, true, false,     // Rx, Ry, no Rz
+  false, true,           // No rudder or throttle
   false, false, false);  // No accelerator, brake, or steering
 
 // Define ints for holding bit vals

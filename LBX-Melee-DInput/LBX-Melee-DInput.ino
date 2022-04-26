@@ -13,9 +13,10 @@
 
 //To do:
 // /DONE/ Add joystick library
-// /TEST/ Fix DPad logic
-// /TEST/ Change the way things are sent / remove GCC sending (this library has an automode, but send manually instead)
-// /TEST/ test range of Left and Right. Base it on 0-255.
+// /DONE/ Fix DPad logic
+// /TEST/ Fix Cstick
+// /DONE/ Change the way things are sent / remove GCC sending (this library has an automode, but send manually instead)
+// /DONE/ test range of Left and Right. Base it on 0-255.
 
 #include <Joystick.h>
 

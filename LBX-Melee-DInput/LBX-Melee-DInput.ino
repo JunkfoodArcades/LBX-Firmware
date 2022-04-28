@@ -9,15 +9,6 @@
 // Code that combines all game types and protocols has not been written.
 // An open source license in line with other projects in this space is provided.
 
-//****************THIS IS IN PROGRESS AND NOT FINISHED*********************
-
-//To do:
-// /DONE/ Add joystick library
-// /DONE/ Fix DPad logic
-// /TEST/ Fix Cstick
-// /DONE/ Change the way things are sent / remove GCC sending (this library has an automode, but send manually instead)
-// /DONE/ test range of Left and Right. Base it on 0-255.
-
 #include <Joystick.h>
 
 Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,

@@ -1,8 +1,10 @@
-// This code uses Matthew Heironimus' Arduino Joystick Library https://github.com/MHeironimus/ArduinoJoystickLibrary
+// Update 2022-05-19: Updated SOCD behavior and angles
+
+// This code uses Nicohood's Nintendo library  https://github.com/NicoHood/Nintendo
 // This code is original but based off of the concepts in Simple's DIY repository (from Jan 6 2017) as well as Crane's GCCPCB repository. Special thanks to both of those peeps!
 // https://github.com/SimpleControllers/SimpleControllersBuild-a-Box
 // https://github.com/Crane1195/GCCPCB/tree/master/code/GCCPCB2-v1.209 (outdated, he has a new repo called CL-FW)
-// Values in the code were observed by flashing Crane's GCCPCB2 code to an arduino PCB and observing the values in "Visual Controller Test".
+// Values in the code were observed by flashing Crane's code to an arduino PCB and observing the values in "Visual Controller Test".
 
 // This code is open source and instuctions for routine flashing, remapping and using it's features (switching to a Brook board) as well as a pinout for our LBX will be posted online.
 // Modifications to adapt this code for other game types and protocols will be posted in separate files.
@@ -15,7 +17,7 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,
   17, 0,                 // Button Count, Hat Switch Count
   true, true, false,     // X and Y, but no Z Axis
   true, true, false,     // Rx, Ry, no Rz
-  false, true,           // No rudder or throttle
+  true, true,           // No rudder or throttle
   false, false, false);  // No accelerator, brake, or steering
 
 // Define ints for holding bit vals
@@ -24,6 +26,8 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,
   unsigned int intLeftRight = 0;
   unsigned int prevIntLeftRight = 0;
   bool lockLeftRight = false;
+  int lockoutLeft=0;
+  int lockoutRight=0;
   unsigned int intUpDown = 0;
   unsigned int prevIntUpDown = 0;
   bool lockUpDown = false;
@@ -72,21 +76,18 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,JOYSTICK_TYPE_GAMEPAD,
   bool boolDPadRight =false;
 
 // Define ModX and ModY impact on single cardinal directions in 2 arrays. (see spreadsheet tabs 1 & 2)
-int modXArr[4] = {151,105,75,181}; // Mod X
+int defaultCardinal[4] = {208,48,48,208}; // Cardinals
+int modXArr[4] = {171,85,75,181}; // Mod X
 int modYArr[4] = {187,69,101,155}; // Mod Y
 
 // Define angle values in 4 arrays. (see spreadsheet tabs 1 & 2)
-int angleArr1[23] = {105,69,104,71,97,71,93,65,85,71,73,98,60,85,98,60,73,85,73,73,85,73,69};                       // Down
-int angleArr2[23] = {69,105,79,100,76,94,79,83,77,81,85,77,88,85,77,88,28,85,105,28,85,105,105};                    // Left
-int angleArr3[23] = {151,187,152,185,159,185,163,191,171,185,171,158,196,171,158,196,228,171,187,228,171,187,187};  // UP
-int angleArr4[23] = {187,151,177,156,180,162,177,173,179,175,171,179,168,171,179,168,228,171,151,228,171,151,151};  // Right
+int angleArr1[31] = {103,69,99,72,89,65,87,72,86,67,73,98,60,73,98,60,73,98,69,73,98,69,69,92,58,86,60,85,64,85,71};                                // Down
+int angleArr2[31] = {69,103,72,99,65,89,72,87,79,77,72,77,88,72,77,88,72,77,103,72,77,103,103,58,92,60,86,69,81,77,81};                             // Left
+int angleArr3[31] = {153,187,157,184,167,191,169,184,170,189,183,158,196,183,158,196,183,158,187,183,158,187,187,164,198,170,196,171,192,171,185};  // UP
+int angleArr4[31] = {187,153,184,157,191,167,184,169,177,179,184,179,168,184,179,168,184,179,153,184,179,153,153,198,164,196,170,187,175,179,175};  // Right
 
-// Define special values in 5 arrays. (see spreadsheet tabs 1 & 2)
-int specialArr1[4] = {228,28,28,228};   // L, ModX+L, ModY+L, LS, MS
-int specialArr2[4] = {171,85,77,179};   // R, ModX+R, ModY+R, ModX+LS, ModX+MS
-int specialArr3[4] = {187,69,101,155};  // ModY+LS, ModY+MS
+// Define special values in 5 arrays. (see spreadsheet tabs 1 & 2)  
 int specialArr4[4] = {187,69,48,208};   // ModY+B
-int specialArr5[4] = {73,71,73,185};    // L, LS, ModY+LS, MS, ModY+MS all have diff vals for down angles
 int specialArr6[2] = {228,28};          // Cstick array
 
 void setup() {
@@ -122,8 +123,7 @@ void setup() {
     digitalWrite(A4, HIGH); // Brook board enabled
     pinMode(17, OUTPUT);    //Send UP to Brook with pin 17
   }
-  
-  // Initialize Joystick Library
+    // Initialize Joystick Library
   Joystick.begin();
     Joystick.setXAxisRange(0, 255);
     Joystick.setYAxisRange(0, 255);
@@ -131,6 +131,7 @@ void setup() {
     Joystick.setRxAxisRange(0, 255);
     Joystick.setRyAxisRange(0, 255);
     Joystick.setThrottleRange(0, 255);
+    Joystick.setRudderRange(0, 255);
 }
 
 void loop() {
@@ -213,16 +214,10 @@ void loop() {
     intR = 0;
     intL = 0;
   }
-  else{
-    
-    // ********check longPrevBtnPress - If current loop matches prev loop then skip the loop
-    if(longPrevBtnPress == longBtnPress){
-        // do nothing - no button changes / end the loop
-    }
-    else{
+
       // button changes need to be processed. Set longPrevBtnPress and continue
       longPrevBtnPress = longBtnPress;
-
+      
       //Zero out analog vals here?
         intR=0;
         intL=0;
@@ -233,60 +228,20 @@ void loop() {
         
       //Handle L, R, LS, MS
       if((boolL) || (boolR) || (boolLS) || (boolMS)){
-        if(boolL){intL=140;}
-        if(boolR){intR=140;}
+        if(boolL){intL=170;}
+        if(boolR){intR=170;}
         else if(boolMS){intR=125;}
         else if(boolLS){intR=80;}
         }
       
-      //If directions, Call SOCD function // Any one of bits 0,1,2,12 must be active
-      if ((boolLeft) || (boolRight) || (boolGCUp) || (boolDown)) {scrubDirSOCD();}
-      else{
-        bitClear(longBtnPress,0);
-        bitClear(longBtnPress,1);
-        bitClear(longBtnPress,2);
-        bitClear(longBtnPress,12);
-        lockLeftRight=false; intLeftRight=0; prevIntLeftRight=0; axisX=128;
-        lockUpDown=false; intUpDown = 0; prevIntUpDown = 0; axisY=128;
-      }
+      scrubDirSOCD();
       
-      if ((boolCLeft) || (boolCRight) || (boolCUp) || (boolCDown)){scrubCStickSOCD();}
-      else{
-        bitClear(longBtnPress,7);
-        bitClear(longBtnPress,8);
-        bitClear(longBtnPress,10);
-        bitClear(longBtnPress,11);
-        lockCLeftRight=false; intCLeftRight=0; prevIntCLeftRight=0; cstickX=128;
-        lockCUpDown=false; intCUpDown = 0; prevIntCUpDown = 0; cstickY=128;
-        }
+      scrubCStickSOCD();
         
       if (boolJFAKey){scrubDpad();}
-//      else{
-//        d.report.dup    = 0;
-//        d.report.ddown  = 0;
-//        d.report.dleft  = 0;
-//        d.report.dright = 0;
-//        }
+        
       scrubAngles();
-    }
-  }
  
-//  d.report.a = boolA;
-//  d.report.b = boolB;
-//  d.report.x = boolX;
-//  d.report.y = boolY;
-//  d.report.z = boolZ;
-//  d.report.start = boolStart;
-//  d.report.r = boolR;
-//  d.report.l = boolL;
-//  d.report.xAxis  = axisX;
-//  d.report.yAxis  = axisY;
-//  d.report.cxAxis   = cstickX;
-//  d.report.cyAxis   = cstickY;
-//  d.report.right = intR;
-//  d.report.left = intL;
-//  GamecubeConsole.write(d);
-
       Joystick.setButton(0, boolA);
       Joystick.setButton(1, boolB);
       Joystick.setButton(2, boolX);
@@ -299,82 +254,82 @@ void loop() {
       Joystick.setButton(9, boolDPadUp);
       Joystick.setButton(10, boolDPadRight);
       Joystick.setButton(11, boolDPadDown);
-      Joystick.setButton(12, boolLS);
-      Joystick.setButton(13, boolMS);
       Joystick.setXAxis(axisX);
       Joystick.setYAxis(axisY);
       Joystick.setRxAxis(cstickX);
       Joystick.setRyAxis(cstickY);
       Joystick.setThrottle(intR);
+      Joystick.setRudder(intL);
   }
+
 }
 
 // Scrub directional SOCD
 void scrubDirSOCD() {
   //if no common SOCD dirs are held, set dir input tracking vars to 0
-  if ((boolLeft==0) && (boolRight==0)){intLeftRight = 0; prevIntLeftRight = 0;}
-  //Check left and right
-  else if ((boolLeft) || (boolRight)) {
+  if ((boolLeft==0) && (boolRight==0)){intLeftRight = 0;prevIntLeftRight = 0;lockLeftRight=false;}
+  
     intLeftRight=0;
     if(boolLeft){bitSet(intLeftRight,0);}
     if(boolRight){bitSet(intLeftRight,1);}
+    
     //Set prevIntLeftRight
     if((prevIntLeftRight==0) && ((intLeftRight>0) && (intLeftRight<3))){prevIntLeftRight = intLeftRight;}
+    
     //2ip no reactivate (melee)
-    if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight==intLeftRight) && (lockLeftRight == true)){intLeftRight=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight!=intLeftRight)){prevIntLeftRight=intLeftRight;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
+    // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    if((prevIntLeftRight==intLeftRight) && (lockLeftRight == true)){intLeftRight=0;}
+    else if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight!=intLeftRight)){prevIntLeftRight=0;lockLeftRight=false;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
     else if(prevIntLeftRight>0 && intLeftRight==3){intLeftRight = (intLeftRight ^ prevIntLeftRight); lockLeftRight=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
-  }
-  if ((boolGCUp==0) && (boolDown==0)){intUpDown = 0; prevIntUpDown = 0;}
+      
+  if ((boolGCUp==0) && (boolDown==0)){intUpDown = 0; prevIntUpDown = 0;lockUpDown=false;}
   //Check up and down
-  else if ((boolDown) || (boolGCUp)){
     intUpDown=0;
     if(boolDown){bitSet(intUpDown,0);}
     if(boolGCUp){bitSet(intUpDown,1);}
     //Set prevIntUpDown    
     if((prevIntUpDown == 0) && ((intUpDown>0) && (intUpDown<3))){prevIntUpDown = intUpDown;}
     //2ip no reactivate (melee)
-    if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown==intUpDown) && (lockUpDown == true)){intUpDown=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown!=intUpDown)){prevIntUpDown=intUpDown;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
+    // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    if((prevIntUpDown==intUpDown) && (lockUpDown == true)){intUpDown=0;}
+    else if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown!=intUpDown)){prevIntUpDown=0;lockUpDown=false;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
     else if(prevIntUpDown>0 && intUpDown==3){intUpDown = (intUpDown ^ prevIntUpDown); lockUpDown=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
-  }
 }
 
 void scrubCStickSOCD() {
   //if no common SOCD dirs are held, set dir input tracking vars to 0
   if ((boolCLeft==0) && (boolCRight==0)){lockCLeftRight=false; intCLeftRight=0; prevIntCLeftRight=0; cstickX=128;}
   //Check Cleft and Cright
-  else if ((boolCLeft) || (boolCRight)) {
     intCLeftRight=0;
     if(boolCLeft){bitSet(intCLeftRight,0);}
     if(boolCRight){bitSet(intCLeftRight,1);}
     //Set prevIntCLeftRight
     if((prevIntCLeftRight==0) && ((intCLeftRight>0) && (intCLeftRight<3))){prevIntCLeftRight = intCLeftRight;}
     //2ip no reactivate (melee)
-    if((prevIntCLeftRight>0) && (intCLeftRight<3) && (prevIntCLeftRight==intCLeftRight) && (lockCLeftRight == true)){intCLeftRight=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntCLeftRight>0) && (intCLeftRight<3) && (prevIntCLeftRight!=intCLeftRight)){prevIntCLeftRight=intCLeftRight;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
+    // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    if((prevIntCLeftRight==intCLeftRight) && (lockCLeftRight == true)){intCLeftRight=0;}
+    else if((prevIntCLeftRight>0) && (intCLeftRight<3) && (prevIntCLeftRight!=intCLeftRight)){prevIntCLeftRight=0;lockCLeftRight=false;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
     else if(prevIntCLeftRight>0 && intCLeftRight==3){intCLeftRight = (intCLeftRight ^ prevIntCLeftRight); lockCLeftRight=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
     if (intCLeftRight==0){cstickX=128;}
     if (intCLeftRight==1){cstickX=28;}
     if (intCLeftRight==2){cstickX=228;}
-  }
   
   if ((boolCUp==0) && (boolCDown==0)){lockCUpDown=false; intCUpDown = 0; prevIntCUpDown = 0; cstickY=128;}
   //Check up and down  
-  else if ((boolCDown) || (boolCUp)){
     intCUpDown=0;
     if(boolCDown){bitSet(intCUpDown,0);}
     if(boolCUp){bitSet(intCUpDown,1);}
     //Set prevIntUpDown    
     if((prevIntCUpDown == 0) && ((intCUpDown>0) && (intCUpDown<3))){prevIntCUpDown = intCUpDown;}
-    //2ip no reactivate (melee)
-    if((prevIntCUpDown>0) && (intCUpDown<3) && (prevIntCUpDown==intCUpDown) && (lockCUpDown == true)){intCUpDown=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntCUpDown>0) && (intCUpDown<3) && (prevIntCUpDown!=intCUpDown)){prevIntCUpDown=intCUpDown;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
+    //2ip no reactivate (melee)    
+    // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    if((prevIntCUpDown==intCUpDown) && (lockCUpDown == true)){intCUpDown=0;}
+    else if((prevIntCUpDown>0) && (intCUpDown<3) && (prevIntCUpDown!=intCUpDown)){prevIntCUpDown=0;lockCUpDown=false;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
     else if(prevIntCUpDown>0 && intCUpDown==3){intCUpDown = (intCUpDown ^ prevIntCUpDown); lockCUpDown=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
     if (intCUpDown==0){cstickY=128;}
     if (intCUpDown==1){cstickY=28;}
     if (intCUpDown==2){cstickY=228;}
-  }
+
 }
 
 void scrubDpad() {
@@ -416,84 +371,59 @@ void scrubAngles() {
   intRLLSMSB += (boolL*2);
   intRLLSMSB += (boolLS*4);
   intRLLSMSB += (boolMS*8);
-  intRLLSMSB += (boolB*16);
+  // can do an if statement to override the value
 
   switch (intDirs) {
       // Left
       case 1: 
-        axisY=128;axisX=28;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisX=28;} // Left
+        axisY=128;axisX=48;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisX=48;} // Left
+        else if((intMods==2) && (boolB)){axisX=specialArr4[2];}                         // Left and ModY+B
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisX=modXArr[2];}         // Left and ModX
         else if(intMods==2 && intCstick==0 && intRLLSMSB==0){axisX=modYArr[2];}         // Left and ModY
         else if((intMods==1) && (intCstick>0) && (intRLLSMSB==0)){axisX=modXArr[2];}    // Left and ModX and Cstick
         else if((intMods==2) && (intCstick>0) && (intRLLSMSB==0)){axisX=modYArr[2];}    // Left and ModY and Cstick
-        else if((intMods==0) && (boolR)){axisX=specialArr2[2];intR=140;}                // Left and R
-        else if((intMods==1) && (boolR)){axisX=specialArr2[2];intR=140;}                // Left and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisX=specialArr2[2];intR=140;}   // Left and ModY+R
-        else if((intMods==0) && (boolL)){axisX=specialArr1[2];intL=140;}                // Left and L
-        else if((intMods==1) && (boolL)){axisX=specialArr1[2];intL=140;}                // Left and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisX=specialArr1[2];intL=140;}   // Left and ModY+L
-        else if((intMods==0) && (boolLS)){axisX=specialArr1[2];intR=80;}                // Left and LS
-        else if((intMods==1) && (boolLS)){axisX=specialArr2[2];intR=80;}                // Left and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisX=specialArr3[2];intR=80;}   // Left and ModY+LS
-        else if((intMods==0) && (boolMS)){axisX=specialArr1[2];intR=125;}               // Left and MS
-        else if((intMods==1) && (boolMS)){axisX=specialArr2[2];intR=125;}               // Left and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisX=specialArr3[2];intR=125;}  // Left and ModY+MS
-        else if((intMods==2) && (boolB)){axisX=specialArr4[2];}                         // Left and ModY+B
+        else {axisX=48;}
         break;
 
       // Right
       case 2:
-        axisY=128;axisX=228;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisX=228;} // Right
+        axisY=128;axisX=208;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisX=208;} // Right
+        else if((intMods==2) && (boolB)){axisX=specialArr4[3];}                         // Right and ModY+B 
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisX=modXArr[3];}         // Right and ModX
         else if(intMods==2 && intCstick==0 && intRLLSMSB==0){axisX=modYArr[3];}         // Right and ModY
         else if((intMods==1) && (intCstick>0) && (intRLLSMSB==0)){axisX=modXArr[3];}    // Right and ModX and Cstick
         else if((intMods==2) && (intCstick>0) && (intRLLSMSB==0)){axisX=modYArr[3];}    // Right and ModY and Cstick
-        else if((intMods==0) && (boolR)){axisX=specialArr2[3];intR=140;}                // Right and R
-        else if((intMods==1) && (boolR)){axisX=specialArr2[3];intR=140;}                // Right and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisX=specialArr2[3];intR=140;}   // Right and ModY+R
-        else if((intMods==0) && (boolL)){axisX=specialArr1[3];intL=140;}                // Right and L
-        else if((intMods==1) && (boolL)){axisX=specialArr1[3];intL=140;}                // Right and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisX=specialArr1[3];intL=140;}   // Right and ModY+L
-        else if((intMods==0) && (boolLS)){axisX=specialArr1[3];intR=80;}                // Right and LS
-        else if((intMods==1) && (boolLS)){axisX=specialArr2[3];intR=80;}                // Right and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisX=specialArr3[3];intR=80;}   // Right and ModY+LS
-        else if((intMods==0) && (boolMS)){axisX=specialArr1[3];intR=125;}               // Right and MS
-        else if((intMods==1) && (boolMS)){axisX=specialArr2[3];intR=125;}               // Right and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisX=specialArr3[3];intR=125;}  // Right and ModY+MS
-        else if((intMods==2) && (boolB)){axisX=specialArr4[3];}                         // Right and ModY+B 
+        else {axisX=208;}  
         break;
 
       // Down
       case 4:
-        axisX=128;axisY=28;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=28;} // Down
+        axisX=128;axisY=48;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisY=48;} // Down
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=modXArr[1];}         // Down and ModX
         else if(intMods==2 && intCstick==0 && intRLLSMSB==0){axisY=modYArr[1];}         // Down and ModY
         else if((intMods==1) && (intCstick>0) && (intRLLSMSB==0)){axisY=modXArr[1];}    // Down and ModX and Cstick
         else if((intMods==2) && (intCstick>0) && (intRLLSMSB==0)){axisY=modYArr[1];}    // Down and ModY and Cstick
-        else if((intMods==0) && (boolR)){axisY=specialArr2[1];intR=140;}                // Down and R
-        else if((intMods==1) && (boolR)){axisY=specialArr2[1];intR=140;}                // Down and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=specialArr2[1];intR=140;}   // Down and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr1[1];intL=140;}                // Down and L
-        else if((intMods==1) && (boolL)){axisY=specialArr1[1];intL=140;}                // Down and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisY=specialArr1[1];intL=140;}   // Down and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr1[1];intR=80;}                // Down and LS
-        else if((intMods==1) && (boolLS)){axisY=specialArr2[1];intR=80;}                // Down and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr3[1];intR=80;}   // Down and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr1[1];intR=125;}               // Down and MS
-        else if((intMods==1) && (boolMS)){axisY=specialArr2[1];intR=125;}               // Down and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr3[1];intR=125;}  // Down and ModY+MS
+        else {axisY=48;}
         break;      
 
       // Down & Left
       case 5:
         // Lots of conditions
-        axisY=28;axisX=28;
-        if(intMods==0 && intCstick==0 && boolR==0 && boolL==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=28;axisX=28;}                // Up Left
+        axisY=72;axisX=72;
+        if(intMods==0 && intCstick==0 && boolR==0 && boolL==0 && boolLS==0 && boolMS==0){axisY=72;axisX=72;}                // Up Left
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=angleArr1[0];axisX=angleArr2[0];}                                    // Down Left and ModX
         else if(intMods>1 && intMods<=3 && intCstick==0 && intRLLSMSB==0){axisY=angleArr1[1];axisX=angleArr2[1];}                       // Down Left and ModY
+        else if((boolB) && (intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[25];axisX=angleArr2[25];}                              // Down Left and B and ModX and CL (25)
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[26];axisX=angleArr2[26];}                 // Down Left and B and ModY and CL (26)
+        else if((boolB) && (intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[29];axisX=angleArr2[29];}               // Down Left and B and ModX and CR (29)
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[30];axisX=angleArr2[30];}  // Down Left and B and ModY and CR (30)
+        else if((boolB) && (intMods==1) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[23];axisX=angleArr2[23];}               // Down Left and B and ModX and CD (23)
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[24];axisX=angleArr2[24];}  // Down Left and B and ModY and CD (24)
+        else if((boolB) && (intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[27];axisX=angleArr2[27];}                              // Down Left and B and ModX and CU (27) cstickX=128;
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[28];axisX=angleArr2[28];}                 // Down Left and B and ModY and CU (28)
         else if((intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[4];axisX=angleArr2[4];}                              // Down Left and ModX and CL
         else if((intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[5];axisX=angleArr2[5];}                 // Down Left and ModY and CL
         else if((intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[8];axisX=angleArr2[8];}               // Down Left and ModX and CR
@@ -502,27 +432,36 @@ void scrubAngles() {
         else if((intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[3];axisX=angleArr2[3];}  // Down Left and ModY and CD
         else if((intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[6];axisX=angleArr2[6];cstickX=128;}                  // Down Left and ModX and CU
         else if((intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[7];axisX=angleArr2[7];}                 // Down Left and ModY and CU
-        else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr2[13];intR=140;}                         // Down Left and R
-        else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr2[14];intR=140;}                         // Down Left and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr2[15];intR=140;}            // Down Left and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[1];intL=140;}                       // *Down Left and L
-        else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr2[11];intL=140;}                         // Down Left and ModX+L
+        else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr2[13];intR=170;}                         // Down Left and R
+        else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr2[14];intR=170;}                         // Down Left and ModX+R
+        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr2[15];intR=170;}            // Down Left and ModY+R
+        else if((intMods==0) && (boolL)){axisY=angleArr1[10];axisX=angleArr2[10];intL=170;}                         // Down Left and L
+        else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr2[11];intL=170;}                         // Down Left and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr2[12];intL=140;}            // Down Left and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=80;}                       // *Down Left and LS
+        else if((intMods==0) && (boolLS)){axisY=angleArr1[16];axisX=angleArr2[16];intR=80;}                         // Down Left and LS
         else if((intMods==1) && (boolLS)){axisY=angleArr1[17];axisX=angleArr2[17];intR=80;}                         // Down Left and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=80;}          // *Down Left and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=125;}                      // *Down Left and MS
+        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr1[18];axisX=angleArr2[18];intR=80;}            // Down Left and ModY+LS
+        else if((intMods==0) && (boolMS)){axisY=angleArr1[19];axisX=angleArr2[19];intR=125;}                        // Down Left and MS
         else if((intMods==1) && (boolMS)){axisY=angleArr1[20];axisX=angleArr2[20];intR=125;}                        // Down Left and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[1];intR=125;}         // *Down Left and ModY+MS
+        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr1[21];axisX=angleArr2[21];intR=125;}           // Down Left and ModY+MS 
+        else{axisY=72;axisX=72;}
         break;
 
       // Down & Right
       case 6: 
         // Lots of conditions
-        axisY=28;axisX=228;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=28;axisX=228;}               // Up Left
+        axisY=72;axisX=184;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisY=72;axisX=184;}               // Up Left
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=angleArr1[0];axisX=angleArr4[0];}                                    // Down Right and ModX
         else if(intMods>1 && intMods<=3 && intCstick==0 && intRLLSMSB==0){axisY=angleArr1[1];axisX=angleArr4[1];}                       // Down Right and ModY
+        else if((boolB) && (intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[25];axisX=angleArr4[25];}                              // Down Right and ModX and CL
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[26];axisX=angleArr4[26];}                 // Down Right and ModY and CL
+        else if((boolB) && (intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[29];axisX=angleArr4[29];}               // Down Right and ModX and CR
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[30];axisX=angleArr4[30];}  // Down Right and ModY and CR
+        else if((boolB) && (intMods==1) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[23];axisX=angleArr4[23];}               // Down Right and ModX and CD
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[24];axisX=angleArr4[24];}  // Down Right and ModY and CD
+        else if((boolB) && (intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[27];axisX=angleArr4[27];}                              // Down Right and ModX and CU
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[28];axisX=angleArr4[28];}                 // Down Right and ModY and CU
         else if((intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[4];axisX=angleArr4[4];}                              // Down Right and ModX and CL
         else if((intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr1[5];axisX=angleArr4[5];}                 // Down Right and ModY and CL
         else if((intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr1[8];axisX=angleArr4[8];}               // Down Right and ModX and CR
@@ -531,49 +470,47 @@ void scrubAngles() {
         else if((intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr1[3];axisX=angleArr4[3];}  // Down Right and ModY and CD
         else if((intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[6];axisX=angleArr4[6];}                              // Down Right and ModX and CU
         else if((intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr1[7];axisX=angleArr4[7];}                 // Down Right and ModY and CU
-        else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr4[13];intR=140;}                         // Down Right and R
-        else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr4[14];intR=140;}                         // Down Right and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr4[15];intR=140;}            // Down Right and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[3];intL=140;}                       // *Down Right and L
-        else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr4[11];intL=140;}                         // Down Right and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr4[12];intL=140;}            // Down Right and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=80;}                       // *Down Right and LS
+        else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr4[13];intR=170;}                         // Down Right and R
+        else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr4[14];intR=170;}                         // Down Right and ModX+R
+        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr4[15];intR=170;}            // Down Right and ModY+R
+        else if((intMods==0) && (boolL)){axisY=angleArr1[10];axisX=angleArr4[10];intL=170;}                         // Down Right and L
+        else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr4[11];intL=170;}                         // Down Right and ModX+L
+        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr4[12];intL=170;}            // Down Right and ModY+L
+        else if((intMods==0) && (boolLS)){axisY=angleArr1[16];axisX=angleArr4[16];intR=80;}                         // Down Right and LS
         else if((intMods==1) && (boolLS)){axisY=angleArr1[17];axisX=angleArr4[17];intR=80;}                         // Down Right and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=80;}          // *Down Right and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=125;}                      // *Down Right and MS
+        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr1[18];axisX=angleArr4[18];intR=80;}            // Down Right and ModY+LS
+        else if((intMods==0) && (boolMS)){axisY=angleArr1[19];axisX=angleArr4[19];intR=125;}                        // Down Right and MS
         else if((intMods==1) && (boolMS)){axisY=angleArr1[20];axisX=angleArr4[20];intR=125;}                        // Down Right and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr5[0];axisX=specialArr5[3];intR=125;}         // *Down Right and ModY+MS
+        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr1[21];axisX=angleArr4[21];intR=125;}           // Down Right and ModY+MS
+        else{axisY=72;axisX=184;}
         break;    
 
       // Up
       case 8:
-        axisX=128;axisY=228;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=228;} // Up
+        axisX=128;axisY=208;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisY=208;} // Up
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=modXArr[0];}         // Up and ModX
         else if(intMods==2 && intCstick==0 && intRLLSMSB==0){axisY=modYArr[0];}         // Up and ModY
         else if((intMods==1) && (intCstick>0) && (intRLLSMSB==0)){axisY=modXArr[0];}    // Up and ModX and Cstick
         else if((intMods==2) && (intCstick>0) && (intRLLSMSB==0)){axisY=modYArr[0];}    // Up and ModY and Cstick
-        else if((intMods==0) && (boolR)){axisY=specialArr2[0];intR=140;}                // Up and R
-        else if((intMods==1) && (boolR)){axisY=specialArr2[0];intR=140;}                // Up and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=specialArr2[0];intR=140;}   // Up and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr1[0];intL=140;}                // Up and L
-        else if((intMods==1) && (boolL)){axisY=specialArr1[0];intL=140;}                // Up and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisY=specialArr1[0];intL=140;}   // Up and ModY+L
-        else if((intMods==0) && (boolLS)){axisY=specialArr1[0];intR=80;}                // Up and LS
-        else if((intMods==1) && (boolLS)){axisY=specialArr2[0];intR=80;}                // Up and ModX+LS
-        else if((intMods>1 && intMods<=3) && (boolLS)){axisY=specialArr3[0];intR=80;}   // Up and ModY+LS
-        else if((intMods==0) && (boolMS)){axisY=specialArr1[0];intR=125;}               // Up and MS
-        else if((intMods==1) && (boolMS)){axisY=specialArr2[0];intR=125;}               // Up and ModX+MS
-        else if((intMods>1 && intMods<=3) && (boolMS)){axisY=specialArr3[0];intR=125;}  // Up and ModY+MS
+        else{axisY=208;}
         break;
 
       // Up & Left
       case 9: 
         // Lots of conditions
-        axisY=228;axisX=28;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=228;axisX=28;}               // Up Left
+        axisY=184;axisX=72;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisY=184;axisX=72;}               // Up Left
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=angleArr3[0];axisX=angleArr2[0];}                                    // Up Left and ModX
         else if(intMods>1 && intMods<=3 && intCstick==0 && intRLLSMSB==0){axisY=angleArr3[1];axisX=angleArr2[1];}                       // Up Left and ModY
+        else if((boolB) && (intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[25];axisX=angleArr2[25];}                              // Up Left and ModX and CL
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[26];axisX=angleArr2[26];}                 // Up Left and ModY and CL
+        else if((boolB) && (intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[29];axisX=angleArr2[29];}               // Up Left and ModX and CR
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[30];axisX=angleArr2[30];}  // Up Left and ModY and CR
+        else if((boolB) && (intMods==1) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[23];axisX=angleArr2[23];}               // Up Left and ModX and CD
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[24];axisX=angleArr2[24];}  // Up Left and ModY and CD
+        else if((boolB) && (intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[27];axisX=angleArr2[27];}                              // Up Left and ModX and CU
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[28];axisX=angleArr2[28];}                 // Up Left and ModY and CU
         else if((intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[4];axisX=angleArr2[4];}                              // Up Left and ModX and CL
         else if((intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[5];axisX=angleArr2[5];}                 // Up Left and ModY and CL
         else if((intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[8];axisX=angleArr2[8];}               // Up Left and ModX and CR
@@ -582,27 +519,36 @@ void scrubAngles() {
         else if((intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[3];axisX=angleArr2[3];}  // Up Left and ModY and CD
         else if((intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[6];axisX=angleArr2[6];}                              // Up Left and ModX and CU
         else if((intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[7];axisX=angleArr2[7];}                 // Up Left and ModY and CU
-        else if((intMods==0) && (boolR)){axisY=angleArr3[13];axisX=angleArr2[13];intR=140;}                         // Up Left and R
-        else if((intMods==1) && (boolR)){axisY=angleArr3[14];axisX=angleArr2[14];intR=140;}                         // Up Left and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr3[15];axisX=angleArr2[15];intR=140;}            // Up Left and ModY+R
-        else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr2[10];intL=140;}                         // Up Left and L
-        else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr2[11];intL=140;}                         // Up Left and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr2[12];intL=140;}            // Up Left and ModY+L
+        else if((intMods==0) && (boolR)){axisY=angleArr3[13];axisX=angleArr2[13];intR=170;}                         // Up Left and R
+        else if((intMods==1) && (boolR)){axisY=angleArr3[14];axisX=angleArr2[14];intR=170;}                         // Up Left and ModX+R
+        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr3[15];axisX=angleArr2[15];intR=170;}            // Up Left and ModY+R
+        else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr2[10];intL=170;}                         // Up Left and L
+        else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr2[11];intL=170;}                         // Up Left and ModX+L
+        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr2[12];intL=170;}            // Up Left and ModY+L
         else if((intMods==0) && (boolLS)){axisY=angleArr3[16];axisX=angleArr2[16];intR=80;}                         // Up Left and LS
         else if((intMods==1) && (boolLS)){axisY=angleArr3[17];axisX=angleArr2[17];intR=80;}                         // Up Left and ModX+LS
         else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr3[18];axisX=angleArr2[18];intR=80;}            // Up Left and ModY+LS
         else if((intMods==0) && (boolMS)){axisY=angleArr3[19];axisX=angleArr2[19];intR=125;}                        // Up Left and MS
         else if((intMods==1) && (boolMS)){axisY=angleArr3[20];axisX=angleArr2[20];intR=125;}                        // Up Left and ModX+MS
         else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr3[21];axisX=angleArr2[21];intR=125;}           // Up Left and ModY+MS
+        else {axisY=184;axisX=72;}
         break;
 
       // Up & Right
       case 10:
         // Lots of conditions
-        axisY=228;axisX=228;
-        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0 && boolB==0){axisY=228;axisX=228;}              // Up Left
+        axisY=184;axisX=184;
+        if(intMods==0 && intCstick==0 && boolL==0 && boolR==0 && boolLS==0 && boolMS==0){axisY=184;axisX=184;}              // Up Left
         else if(intMods==1 && intCstick==0 && intRLLSMSB==0){axisY=angleArr3[0];axisX=angleArr4[0];}                                    // Up Right and ModX
         else if(intMods>1 && intMods<=3 && intCstick==0 && intRLLSMSB==0){axisY=angleArr3[1];axisX=angleArr4[1];}                       // Up Right and ModY
+        else if((boolB) && (intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[25];axisX=angleArr4[25];}                              // Up Right and ModX and CL
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[26];axisX=angleArr4[26];}                 // Up Right and ModY and CL
+        else if((boolB) && (intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[29];axisX=angleArr4[29];}               // Up Right and ModX and CR
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[30];axisX=angleArr4[30];}  // Up Right and ModY and CR
+        else if((boolB) && (intMods==1) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[23];axisX=angleArr4[23];}               // Up Right and ModX and CD
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[24];axisX=angleArr4[24];}  // Up Right and ModY and CD
+        else if((boolB) && (intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[27];axisX=angleArr4[27];}                              // Up Right and ModX and CU
+        else if((boolB) && (intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[28];axisX=angleArr4[28];}                 // Up Right and ModY and CU
         else if((intMods==1) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[4];axisX=angleArr4[4];}                              // Up Right and ModX and CL
         else if((intMods>1 && intMods<=3) && (intCstick==1) && (intRLLSMSB==0)){axisY=angleArr3[5];axisX=angleArr4[5];}                 // Up Right and ModY and CL
         else if((intMods==1) && (intCstick>=2 && intCstick<4) && (intRLLSMSB==0)){axisY=angleArr3[8];axisX=angleArr4[8];}               // Up Right and ModX and CR
@@ -611,18 +557,19 @@ void scrubAngles() {
         else if((intMods>1 && intMods<=3) && (intCstick>=4 && intCstick<8) && (intRLLSMSB==0)){axisY=angleArr3[3];axisX=angleArr4[3];}  // Up Right and ModY and CD
         else if((intMods==1) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[6];axisX=angleArr4[6];}                              // Up Right and ModX and CU
         else if((intMods>1 && intMods<=3) && (intCstick>=8) && (intRLLSMSB==0)){axisY=angleArr3[7];axisX=angleArr4[7];}                 // Up Right and ModY and CU
-        else if((intMods==0) && (boolR)){axisY=angleArr3[13];axisX=angleArr4[13];intR=140;}                         // Up Right and R
-        else if((intMods==1) && (boolR)){axisY=angleArr3[14];axisX=angleArr4[14];intR=140;}                         // Up Right and ModX+R
-        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr3[15];axisX=angleArr4[15];intR=140;}            // Up Right and ModY+R
-        else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr4[10];intL=140;}                         // Up Right and L
-        else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr4[11];intL=140;}                         // Up Right and ModX+L
-        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr4[12];intL=140;}            // Up Right and ModY+L
+        else if((intMods==0) && (boolR)){axisY=angleArr3[13];axisX=angleArr4[13];intR=170;}                         // Up Right and R
+        else if((intMods==1) && (boolR)){axisY=angleArr3[14];axisX=angleArr4[14];intR=170;}                         // Up Right and ModX+R
+        else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr3[15];axisX=angleArr4[15];intR=170;}            // Up Right and ModY+R
+        else if((intMods==0) && (boolL)){axisY=angleArr3[10];axisX=angleArr4[10];intL=170;}                         // Up Right and L
+        else if((intMods==1) && (boolL)){axisY=angleArr3[11];axisX=angleArr4[11];intL=170;}                         // Up Right and ModX+L
+        else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr3[12];axisX=angleArr4[12];intL=170;}            // Up Right and ModY+L
         else if((intMods==0) && (boolLS)){axisY=angleArr3[16];axisX=angleArr4[16];intR=80;}                         // Up Right and LS
         else if((intMods==1) && (boolLS)){axisY=angleArr3[17];axisX=angleArr4[17];intR=80;}                         // Up Right and ModX+LS
         else if((intMods>1 && intMods<=3) && (boolLS)){axisY=angleArr3[18];axisX=angleArr4[18];intR=80;}            // Up Right and ModY+LS
         else if((intMods==0) && (boolMS)){axisY=angleArr3[19];axisX=angleArr4[19];intR=125;}                        // Up Right and MS
         else if((intMods==1) && (boolMS)){axisY=angleArr3[20];axisX=angleArr4[20];intR=125;}                        // Up Right and ModX+MS
         else if((intMods>1 && intMods<=3) && (boolMS)){axisY=angleArr3[21];axisX=angleArr4[21];intR=125;}           // Up Right and ModY+MS
+        else {axisY=184;axisX=184;}
         break;
   }
 }

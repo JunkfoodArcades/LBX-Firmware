@@ -72,10 +72,10 @@ int modXArr[4] = {188,68,58,198}; // Mod X
 int modYArr[4] = {162,94,100,156}; // Mod Y
 
 // Define angle values in 4 arrays. (see spreadsheet tabs 5 & 6)
-int angleArr1[16] = {94,70,96,46,78,44,73,51,67,56,195,195,195,176,168,196};            // Down
-int angleArr2[16] = {58,100,46,96,44,78,51,73,56,66,195,195,195,176,196,168};           // Left
+int angleArr1[16] = {94,70,96,46,78,44,73,51,67,56,61,61,61,80,88,60};                  // Down
+int angleArr2[16] = {58,100,46,96,44,78,51,73,56,66,61,61,61,80,60,88};                 // Left
 int angleArr3[16] = {162,186,160,210,178,212,183,205,189,200,195,195,195,176,168,196};  // UP
-int angleArr4[16] = {198,156,210,160,212,178,205,183,200,190,195,195,195,176,168,196};  // Right
+int angleArr4[16] = {198,156,210,160,212,178,205,183,200,190,195,195,195,176,196,168};  // Right
 
 // Define special values in 5 arrays. (see spreadsheet tabs 5 & 6)
 int specialArr1[4] = {228,28,28,228};   // L, ModX+L, ModY+L
@@ -449,7 +449,7 @@ void scrubAngles() {
         else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr2[13];intR=140;}                         // Down Left and R
         else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr2[14];intR=140;}                         // Down Left and ModX+R
         else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr2[15];intR=140;}            // Down Left and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[1];intL=140;}                       // *Down Left and L
+        else if((intMods==0) && (boolL)){axisY=angleArr1[10];axisX=angleArr2[10];intL=140;}                         // Down Left and L
         else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr2[11];intL=140;}                         // Down Left and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr2[12];intL=140;}            // Down Left and ModY+L
         break;
@@ -472,7 +472,7 @@ void scrubAngles() {
         else if((intMods==0) && (boolR)){axisY=angleArr1[13];axisX=angleArr4[13];intR=140;}                         // Down Right and R
         else if((intMods==1) && (boolR)){axisY=angleArr1[14];axisX=angleArr4[14];intR=140;}                         // Down Right and ModX+R
         else if((intMods>1 && intMods<=3) && (boolR)){axisY=angleArr1[15];axisX=angleArr4[15];intR=140;}            // Down Right and ModY+R
-        else if((intMods==0) && (boolL)){axisY=specialArr5[0];axisX=specialArr5[3];intL=140;}                       // *Down Right and L
+        else if((intMods==0) && (boolL)){axisY=angleArr1[10];axisX=angleArr4[10];intL=140;}                         // Down Right and L
         else if((intMods==1) && (boolL)){axisY=angleArr1[11];axisX=angleArr4[11];intL=140;}                         // Down Right and ModX+L
         else if((intMods>1 && intMods<=3) && (boolL)){axisY=angleArr1[12];axisX=angleArr4[12];intL=140;}            // Down Right and ModY+L
         break;    

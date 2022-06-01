@@ -200,10 +200,10 @@ void loop() {
   else{
     
     // ********check longPrevBtnPress - If current loop matches prev loop then skip the loop
-    if(longPrevBtnPress == longBtnPress){
+    //if(longPrevBtnPress == longBtnPress){
         // do nothing - no button changes / end the loop
-    }
-    else{
+    //}
+    //else{
       // button changes need to be processed. Set longPrevBtnPress and continue
       longPrevBtnPress = longBtnPress;
 
@@ -252,7 +252,7 @@ void loop() {
         d.report.dright = 0;
         }
       scrubAngles();
-    }
+    //}
   }
  
   d.report.a = boolA;
@@ -276,32 +276,33 @@ void loop() {
 // Scrub directional SOCD
 void scrubDirSOCD() {
   //if no common SOCD dirs are held, set dir input tracking vars to 0
-  if ((boolLeft==0) && (boolRight==0)){intLeftRight = 0; prevIntLeftRight = 0;}
-  //Check left and right
-  else if ((boolLeft) || (boolRight)) {
+  if ((boolLeft==0) && (boolRight==0)){intLeftRight = 0; prevIntLeftRight = 0;lockLeftRight=false;}
+
     intLeftRight=0;
     if(boolLeft){bitSet(intLeftRight,0);}
     if(boolRight){bitSet(intLeftRight,1);}
+    
     //Set prevIntLeftRight
     if((prevIntLeftRight==0) && ((intLeftRight>0) && (intLeftRight<3))){prevIntLeftRight = intLeftRight;}
+    
     //2ip no reactivate (melee)
-    if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight==intLeftRight) && (lockLeftRight == true)){intLeftRight=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight!=intLeftRight)){prevIntLeftRight=intLeftRight;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
+    if((prevIntLeftRight==intLeftRight) && (lockLeftRight == true)){intLeftRight=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    else if((prevIntLeftRight>0) && (intLeftRight<3) && (prevIntLeftRight!=intLeftRight)){prevIntLeftRight=0;lockLeftRight=false;} //If they hold the seccond button and release the first, update prevIntLeftRight to match.
     else if(prevIntLeftRight>0 && intLeftRight==3){intLeftRight = (intLeftRight ^ prevIntLeftRight); lockLeftRight=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
-  }
+  
   if ((boolGCUp==0) && (boolDown==0)){intUpDown = 0; prevIntUpDown = 0;}
-  //Check up and down
-  else if ((boolDown) || (boolGCUp)){
+  
     intUpDown=0;
     if(boolDown){bitSet(intUpDown,0);}
     if(boolGCUp){bitSet(intUpDown,1);}
+    
     //Set prevIntUpDown    
     if((prevIntUpDown == 0) && ((intUpDown>0) && (intUpDown<3))){prevIntUpDown = intUpDown;}
+    
     //2ip no reactivate (melee)
-    if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown==intUpDown) && (lockUpDown == true)){intUpDown=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
-    else if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown!=intUpDown)){prevIntUpDown=intUpDown;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
+    if((prevIntUpDown==intUpDown) && (lockUpDown == true)){intUpDown=0;} // Must check for cleaning having been performed at least once. Crane uses a Lockout var. That's the approach here as well.
+    else if((prevIntUpDown>0) && (intUpDown<3) && (prevIntUpDown!=intUpDown)){prevIntUpDown=0;lockUpDown=false;} // If they hold the seccond button and release the first, update prevIntLeftRight to match.   
     else if(prevIntUpDown>0 && intUpDown==3){intUpDown = (intUpDown ^ prevIntUpDown); lockUpDown=true;} // SOCD, 2ip no reactivate. Can't subtract a larger number from a smaller number and stil have a positive int. Do a bit comparison using XOR instead.
-  }
 }
 
 void scrubCStickSOCD() {
